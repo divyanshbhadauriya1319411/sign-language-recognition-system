@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: signbridge-config
+  namespace: signbridge-prod
+data:
+  ENVIRONMENT: "production"
+  PROJECT_NAME: "SignBridge Enterprise Platform"
+  LOG_LEVEL: "INFO"
+  MONGODB_DB_NAME: "signbridge_enterprise_prod"
+  REDIS_HOST: "signbridge-redis"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: signbridge-secrets
+  namespace: signbridge-prod
+type: Opaque
+stringData:
+  SECRET_KEY: "prod_secret_key_change_in_vault"
+  JWT_SECRET: "prod_jwt_secret_change_in_vault"
+  MONGO_INITDB_ROOT_USERNAME: "admin"
+  MONGO_INITDB_ROOT_PASSWORD: "secure_mongodb_password"

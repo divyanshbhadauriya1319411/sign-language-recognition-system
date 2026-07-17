@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signbridge-backend
+  namespace: signbridge-prod
+  labels:
+    app: signbridge-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: signbridge-backend
+  template:
+    metadata:
+      labels:
+        app: signbridge-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/signbridge/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: signbridge-config
+            - secretRef:
+                name: signbridge-secrets
+          env:
+            - name: MONGODB_URL
+              value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@signbridge-mongodb:27017/?authSource=admin"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signbridge-ai-service
+  namespace: signbridge-prod
+  labels:
+    app: signbridge-ai-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: signbridge-ai-service
+  template:
+    metadata:
+      labels:
+        app: signbridge-ai-service
+    spec:
+      containers:
+        - name: ai-service
+          image: ghcr.io/signbridge/ai-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: signbridge-config
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "4000m"
+              memory: "4Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signbridge-frontend
+  namespace: signbridge-prod
+  labels:
+    app: signbridge-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: signbridge-frontend
+  template:
+    metadata:
+      labels:
+        app: signbridge-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/signbridge/frontend:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

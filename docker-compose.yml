@@ -1,0 +1,199 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7-jammy
+    container_name: signbridge_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-secretpassword}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-signbridge_enterprise_db}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signbridge_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: signbridge_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signbridge_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: signbridge_backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MONGODB_URL: "mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-secretpassword}@mongodb:27017/?authSource=admin"
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-signbridge_enterprise_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: "redis://redis:6379/0"
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      AI_SERVICE_URL: "http://ai-service:8001"
+      AI_WEBSOCKET_URL: "ws://ai-service:8001/ai/v1/stream"
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - ./storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - signbridge_net
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: signbridge_celery_worker
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MONGODB_URL: "mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-secretpassword}@mongodb:27017/?authSource=admin"
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-signbridge_enterprise_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: "redis://redis:6379/0"
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      AI_SERVICE_URL: "http://ai-service:8001"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - ./storage:/app/storage
+    command: celery -A app.workers.celery_app worker --loglevel=info
+    networks:
+      - signbridge_net
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: signbridge_ai_service
+    restart: always
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: "redis://redis:6379/0"
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./ai-service:/app
+      - ./storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    networks:
+      - signbridge_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: signbridge_frontend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_AI_WS_URL: ws://localhost:8001/ai/v1/stream
+      NEXT_PUBLIC_AI_REST_URL: http://localhost:8001/ai/v1
+      VITE_API_URL: http://localhost:8000/api/v1
+      VITE_AI_WS_URL: ws://localhost:8001/ai/v1/stream
+      VITE_AI_REST_URL: http://localhost:8001/ai/v1
+      BACKEND_INTERNAL_URL: http://backend:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: npm run dev -- -p 3000 -H 0.0.0.0
+    networks:
+      - signbridge_net
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: signbridge_prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    networks:
+      - signbridge_net
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: signbridge_grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - signbridge_net
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  signbridge_net:
+    driver: bridge

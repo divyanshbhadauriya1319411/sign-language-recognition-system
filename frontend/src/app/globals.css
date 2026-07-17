@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode Semantic Background & Surface Colors */
+    --background: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-elevated: #FFFFFF;
+    
+    /* Light Mode Semantic Text Colors */
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    
+    /* Light Mode Semantic Borders & Dividers */
+    --border: #E2E8F0;
+    --divider: #CBD5E1;
+
+    /* Semantic Color System - Primary (Trust, Technology, Stability) */
+    --primary-base: #2563EB;
+    --primary-hover: #1D4ED8;
+    --primary-pressed: #1E40AF;
+    --primary-soft: #DBEAFE;
+
+    /* Semantic Color System - Secondary (Supporting Actions) */
+    --secondary-base: #0F766E;
+    --secondary-hover: #115E59;
+    --secondary-soft: #CCFBF1;
+
+    /* Semantic Color System - Accent (AI-Specific Elements & Predictions) */
+    --accent-base: #7C3AED;
+    --accent-hover: #6D28D9;
+    --accent-soft: #EDE9FE;
+
+    /* Semantic Color System - Success, Warning, Error, Information */
+    --success-base: #16A34A;
+    --success-hover: #15803D;
+    --success-soft: #DCFCE7;
+
+    --warning-base: #D97706;
+    --warning-hover: #B45309;
+    --warning-soft: #FEF3C7;
+
+    --error-base: #DC2626;
+    --error-hover: #B91C1C;
+    --error-soft: #FEE2E2;
+
+    --info-base: #0284C7;
+    --info-soft: #E0F2FE;
+
+    /* Glass & Card Backgrounds */
+    --card-bg: rgba(255, 255, 255, 0.85);
+  }
+
+  .dark {
+    /* Dark Mode Semantic Background & Surface Colors */
+    --background: #0F172A;
+    --surface: #1E293B;
+    --surface-elevated: #334155;
+    
+    /* Dark Mode Semantic Text Colors */
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    
+    /* Dark Mode Semantic Borders & Dividers */
+    --border: #475569;
+    --divider: #64748B;
+
+    /* Dark Mode Adjusted Semantic Soft Backgrounds for High Contrast & Comfort */
+    --primary-soft: rgba(37, 99, 235, 0.18);
+    --secondary-soft: rgba(15, 118, 110, 0.18);
+    --accent-soft: rgba(124, 58, 237, 0.18);
+    --success-soft: rgba(22, 163, 74, 0.18);
+    --warning-soft: rgba(217, 119, 6, 0.18);
+    --error-soft: rgba(220, 38, 38, 0.18);
+    --info-soft: rgba(2, 132, 199, 0.18);
+
+    /* Glass & Card Backgrounds */
+    --card-bg: rgba(30, 41, 59, 0.85);
+  }
+
+  /* High Contrast Mode for WCAG 2.2 AA/AAA Compliance */
+  .high-contrast {
+    --background: #000000 !important;
+    --surface: #111111 !important;
+    --surface-elevated: #1A1A1A !important;
+    --text-primary: #FFFFFF !important;
+    --text-secondary: #FFFF00 !important;
+    --border: #FFFF00 !important;
+    --divider: #FFFFFF !important;
+    --card-bg: #111111 !important;
+  }
+
+  .high-contrast * {
+    border-color: var(--border) !important;
+  }
+
+  .high-contrast button,
+  .high-contrast a,
+  .high-contrast input,
+  .high-contrast select,
+  .high-contrast textarea {
+    outline: 2px solid #FFFF00 !important;
+    outline-offset: 2px !important;
+  }
+
+  body {
+    @apply bg-background text-text-primary antialiased selection:bg-primary-base selection:text-white transition-colors duration-300 min-h-screen flex flex-col;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Accessible High-Contrast Focus Ring Utility */
+@layer utilities {
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-base focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-shadow duration-150;
+  }
+
+  .focus-ring-danger {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-error-base focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-shadow duration-150;
+  }
+}
+
+/* Custom Accessible Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Glass panel semantic token */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+/* Calm animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

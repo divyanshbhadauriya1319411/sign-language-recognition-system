@@ -1,0 +1,27 @@
+{
+  "name": "signbridge-isl-enterprise-platform",
+  "version": "2.0.0",
+  "description": "Enterprise AI-Powered Sign Language Recognition and Translation Platform (Indian Sign Language - ISL)",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:ai\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:ai": "cd ai-service && python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload",
+    "build": "npm run build --workspace=frontend",
+    "test": "echo \"Running enterprise test suite across frontend, backend, and ai-service\" && pytest backend/app/tests ai-service/app/tests && npm run test --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend",
+    "start": "npm run preview --workspace=frontend",
+    "docker:up": "docker-compose up --build -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "author": "SignBridge Enterprise Team",
+  "license": "UNLICENSED"
+}

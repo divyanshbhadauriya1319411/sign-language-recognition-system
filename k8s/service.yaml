@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: signbridge-backend
+  namespace: signbridge-prod
+spec:
+  type: ClusterIP
+  selector:
+    app: signbridge-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signbridge-ai-service
+  namespace: signbridge-prod
+spec:
+  type: ClusterIP
+  selector:
+    app: signbridge-ai-service
+  ports:
+    - port: 8001
+      targetPort: 8001
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signbridge-frontend
+  namespace: signbridge-prod
+spec:
+  type: ClusterIP
+  selector:
+    app: signbridge-frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
